@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "d797e580ddcddc99bf058109ab0306ad584c2902752a3d4076ba713fdc580fb7"
+            "sha256": "97cdb19ecbfa6c1537186dff53c41fb23bd61538e796d0e184d5b31ddae9f864"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -59,6 +59,14 @@
                 "sha256:fc323ffcaeaed0e0a02bf4d117757b98aed530d9ed4531e3e15460124c106691"
             ],
             "version": "==3.0.4"
+        },
+        "fuzzywuzzy": {
+            "hashes": [
+                "sha256:d40c22d2744dff84885b30bbfc07fab7875f641d070374331777a4d1808b8d4e",
+                "sha256:ecf490216fb4d76b558a03042ff8f45a8782f17326caca1384d834cbaa2c7e6f"
+            ],
+            "index": "pypi",
+            "version": "==0.16.0"
         },
         "idna": {
             "hashes": [
@@ -119,6 +127,13 @@
                 "sha256:f50be4dd53f009cfb4b98c3c6b240e18ff9b17e3f1c320bd594bb83eddabfcb2"
             ],
             "version": "==2.3.0"
+        },
+        "python-levenshtein": {
+            "hashes": [
+                "sha256:033a11de5e3d19ea25c9302d11224e1a1898fe5abd23c61c7c360c25195e3eb1"
+            ],
+            "index": "pypi",
+            "version": "==0.12.0"
         },
         "websockets": {
             "hashes": [
