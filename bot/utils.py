@@ -1,4 +1,45 @@
 # coding=utf-8
+import asyncio
+from typing import List
+
+from discord.ext.commands import BadArgument, Context
+
+
+async def disambiguate(ctx: Context, entries: List[str], timeout: int = 30):
+    """
+    Has the user choose between multiple entries in case one could not be chosen automatically.
+
+    :param ctx: Context object from discord.py
+    :param entries: List of items for user to choose from
+    :param timeout: Number of seconds to wait before canceling disambiguation
+    :return: Users choice for correct entry.
+    """
+    if len(entries) == 0:
+        raise BadArgument('No matches found.')
+
+    if len(entries) == 1:
+        return entries[0]
+
+    choices = '\n'.join(f'{index}: {entry}' for index, entry in enumerate(entries, start=1))
+    await ctx.send('Found multiple entries. Please choose the correct one.\n```' + choices + '```')
+
+    def check(message):
+        return (message.content.isdigit() and
+                message.author == ctx.author and
+                message.channel == ctx.channel)
+
+    try:
+        message = await ctx.bot.wait_for('message', check=check, timeout=timeout)
+    except asyncio.TimeoutError:
+        raise BadArgument('Timed out.')
+
+    # Guaranteed to not error because of isdigit() in check
+    index = int(message.content)
+
+    try:
+        return entries[index - 1]
+    except IndexError:
+        raise BadArgument('Invalid choice.')
 
 
 class CaseInsensitiveDict(dict):
