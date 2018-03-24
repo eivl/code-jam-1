@@ -2,7 +2,10 @@
 import asyncio
 from typing import List
 
+import discord
 from discord.ext.commands import BadArgument, Context
+
+from bot.pagination import LinePaginator
 
 
 async def disambiguate(ctx: Context, entries: List[str], timeout: int = 30):
@@ -20,8 +23,7 @@ async def disambiguate(ctx: Context, entries: List[str], timeout: int = 30):
     if len(entries) == 1:
         return entries[0]
 
-    choices = '\n'.join(f'{index}: {entry}' for index, entry in enumerate(entries, start=1))
-    await ctx.send('Found multiple entries. Please choose the correct one.\n```' + choices + '```')
+    choices = (f'{index}: {entry}' for index, entry in enumerate(entries, start=1))
 
     def check(message):
         return (message.content.isdigit() and
@@ -29,12 +31,29 @@ async def disambiguate(ctx: Context, entries: List[str], timeout: int = 30):
                 message.channel == ctx.channel)
 
     try:
-        message = await ctx.bot.wait_for('message', check=check, timeout=timeout)
+        embed = discord.Embed(title='Found multiple choices. Please choose the correct one.', colour=0x59982F)
+        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+
+        coro1 = ctx.bot.wait_for('message', check=check, timeout=timeout)
+        coro2 = LinePaginator.paginate(choices, ctx, embed=embed, max_lines=20, empty=False)
+
+        # wait_for timeout will go to except instead of the wait_for thing as I expected
+        futures = [asyncio.ensure_future(coro1), asyncio.ensure_future(coro2)]
+        done, pending = await asyncio.wait(futures, return_when=asyncio.FIRST_COMPLETED, loop=ctx.bot.loop)
+
+        for coro in pending:
+            coro.cancel()
+
+        # :yert:
+        result = list(done)[0].result()
+
+        if result is None:
+            raise BadArgument('Canceled.')
     except asyncio.TimeoutError:
         raise BadArgument('Timed out.')
 
     # Guaranteed to not error because of isdigit() in check
-    index = int(message.content)
+    index = int(result.content)
 
     try:
         return entries[index - 1]
