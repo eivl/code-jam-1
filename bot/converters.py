@@ -25,7 +25,7 @@ class Snake(Converter):
         all_names = self.snakes.keys() | self.snakes.values()
         timeout = len(all_names) * (3 / 4)
 
-        name = await disambiguate(ctx, list(get_potential(all_names)), timeout=timeout)
+        name = await disambiguate(ctx, list(get_potential(all_names)), timeout=timeout, colour=0x59982F)
         return self.snakes.get(name, name)
 
     @classmethod
