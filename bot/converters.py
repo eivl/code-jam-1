@@ -22,7 +22,7 @@ class Snake(Converter):
                 if a >= threshold or b >= threshold:
                     yield item
 
-        all_names = set(self.snakes.keys() | self.snakes.values())
+        all_names = self.snakes.keys() | self.snakes.values()
         timeout = len(all_names) * (3 / 4)
 
         name = await disambiguate(ctx, list(get_potential(all_names)), timeout=timeout)
