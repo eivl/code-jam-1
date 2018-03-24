@@ -8,7 +8,7 @@ from discord.ext.commands import BadArgument, Context
 from bot.pagination import LinePaginator
 
 
-async def disambiguate(ctx: Context, entries: List[str], timeout: int = 30):
+async def disambiguate(ctx: Context, entries: List[str], timeout: float = 30):
     """
     Has the user choose between multiple entries in case one could not be chosen automatically.
 
@@ -35,7 +35,8 @@ async def disambiguate(ctx: Context, entries: List[str], timeout: int = 30):
         embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
 
         coro1 = ctx.bot.wait_for('message', check=check, timeout=timeout)
-        coro2 = LinePaginator.paginate(choices, ctx, embed=embed, max_lines=20, empty=False)
+        coro2 = LinePaginator.paginate(choices, ctx, embed=embed, max_lines=20,
+                                       empty=False, max_size=1500, timeout=9000)
 
         # wait_for timeout will go to except instead of the wait_for thing as I expected
         futures = [asyncio.ensure_future(coro1), asyncio.ensure_future(coro2)]

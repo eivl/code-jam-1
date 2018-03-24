@@ -22,12 +22,11 @@ class Snake(Converter):
                 if a >= threshold or b >= threshold:
                     yield item
 
-        scientific = list(get_potential(self.snakes.values()))
-        if scientific:
-            return await disambiguate(ctx, scientific)
+        all_names = set(self.snakes.keys() | self.snakes.values())
+        timeout = len(all_names) * (3 / 4)
 
-        common = list(get_potential(self.snakes.keys()))
-        return await disambiguate(ctx, common)
+        name = await disambiguate(ctx, list(get_potential(all_names)), timeout=timeout)
+        return self.snakes.get(name, name)
 
     @classmethod
     def random(cls):
