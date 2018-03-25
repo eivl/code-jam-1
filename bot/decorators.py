@@ -1,8 +1,12 @@
 # coding=utf-8
 import logging
 
+from asyncio import Lock
 from discord.ext import commands
 from discord.ext.commands import Context
+from weakref import WeakValueDictionary
+
+from functools import wraps
 
 log = logging.getLogger(__name__)
 
@@ -47,3 +51,18 @@ def in_channel(channel_id):
                   f"The result of the in_channel check was {check}.")
         return check
     return commands.check(predicate)
+
+
+def locked():
+    def wrap(func):
+        func.__locks = WeakValueDictionary()
+
+        @wraps(func)
+        async def inner(self, ctx, *args, **kwargs):
+            lock = func.__locks.setdefault(ctx.author.id, Lock())
+            if lock.locked():
+                return
+            async with func.__locks.setdefault(ctx.author.id, Lock()):
+                return await func(self, ctx, *args, **kwargs)
+        return inner
+    return wrap

@@ -12,6 +12,7 @@ import discord
 from discord.ext.commands import AutoShardedBot, Context, command, bot_has_permissions
 
 from bot.converters import Snake
+from bot.decorators import locked
 from bot.utils import disambiguate
 
 log = logging.getLogger(__name__)
@@ -114,7 +115,6 @@ class Snakes:
                         if image_banned:
                             log.info("the image is banned")
                         else:
-                            log.info("the image is clean: ", i)
                             image_list.append(f"{i_url}{i}")
                             thumb_list.append(f"{i_url}{i}?width=100")
                     else:
@@ -126,6 +126,7 @@ class Snakes:
 
     @command(name="snakes.get()", aliases=["snakes.get"])
     @bot_has_permissions(manage_messages=True)
+    @locked()
     async def get(self, ctx: Context, name: Snake = None):
         """
         Fetches information about a snake from Wikipedia.
@@ -197,6 +198,7 @@ class Snakes:
         ))
 
     @command(name="snakes.guess()", aliases=["snakes.guess", "identify"])
+    @locked()
     async def guess(self, ctx):
         """
         Snake identifying game!
