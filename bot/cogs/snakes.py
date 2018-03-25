@@ -88,7 +88,7 @@ class Snakes:
                 image_list = []
                 map_list = []
                 for image in snake_info["images"]:
-                    i = image["title"].split(':')[1]
+                    i = image["title"].split(':')[1].replace(" ", "%20")
                     if 'Map' not in i:
                         image_list.append(f"{i_url}{i}")
                     else:
