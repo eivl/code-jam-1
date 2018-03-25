@@ -12,7 +12,6 @@ class Snake(Converter):
         snakes = json.load(f)
 
     async def convert(self, ctx, name):
-        print(name)
         name = name.lower()
 
         if name == 'python':

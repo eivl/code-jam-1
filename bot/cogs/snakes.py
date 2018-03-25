@@ -8,7 +8,7 @@ from typing import Any, Dict
 import aiohttp
 import async_timeout
 import discord
-from discord.ext.commands import AutoShardedBot, Context, command
+from discord.ext.commands import AutoShardedBot, Context, command, bot_has_permissions
 
 from bot.converters import Snake
 
@@ -103,6 +103,7 @@ class Snakes:
         return snake_info
 
     @command()
+    @bot_has_permissions(manage_messages=True)
     async def get(self, ctx: Context, name: Snake = None):
         """
         Go online and fetch information about a snake
@@ -127,19 +128,26 @@ class Snakes:
         )
 
         fields = self.wiki_sects.findall(data['extract'])
-        excluded = ('see also',)
+        excluded = ('see also', 'further reading', 'subspecies')
 
         for title, body in fields:
             if title.lower() in excluded:
                 continue
             if not body.strip():
                 continue
+            # Only takes the first sentence
+            title, dot, _ = title.partition('.')
+            # There's probably a better way to do this
             value = textwrap.shorten(body.strip(), width=200)
-            embed.add_field(name=title, value=value + '\n\u200b', inline=False)
+            embed.add_field(name=title + dot, value=value + '\n\u200b', inline=False)
 
         embed.set_footer(text='Powered by Wikipedia')
 
-        # TODO thumbnail in embed
+        valid = ('gif', 'png', 'jpeg', 'jpg', 'webp')
+        emoji = 'https://emojipedia-us.s3.amazonaws.com/thumbs/60/google/3/snake_1f40d.png'
+        image = next((url for url in data['image_list'] if url.endswith(valid)), emoji)
+        embed.set_thumbnail(url=image)
+
         await ctx.send(embed=embed)
 
     async def on_command_error(self, ctx, error):
