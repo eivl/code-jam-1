@@ -26,9 +26,9 @@ class Snakes:
     def __init__(self, bot: AutoShardedBot):
         self.bot = bot
 
-    async def fetch(self, session, url):
+    async def fetch(self, url):
         async with async_timeout.timeout(10):
-            async with session.get(url) as response:
+            async with bot.http_session(url) as response:
                 return await response.text()
 
     async def get_snek(self, name: str = None) -> Dict[str, Any]:
@@ -60,8 +60,8 @@ class Snakes:
 
         PAGE_ID_URL = f"{URL}{FORMAT}&{ACTION}&{LIST}&{SRSEARCH}{name}&{UTF8}&{SRLIMIT}"
 
-        async with aiohttp.ClientSession() as session:
-            response = await self.fetch(session, PAGE_ID_URL)
+        async with bot.http_session as session:
+            response = await self.fetch(PAGE_ID_URL)
             j = json.loads(response)
             # wikipedia does have a error page
             try:
@@ -72,8 +72,8 @@ class Snakes:
 
         snake_page = f"{URL}{FORMAT}&{ACTION}&{PROP}&{EXLIMIT}&{EXPLAINTEXT}&{INPROP}&{PAGEIDS}"
 
-        async with aiohttp.ClientSession() as session:
-            response = await self.fetch(session, snake_page)
+        async with bot.http_session as session:
+            response = await self.fetch(snake_page)
             j = json.loads(response)
             # constructing dict - handle exceptions later
             try:
