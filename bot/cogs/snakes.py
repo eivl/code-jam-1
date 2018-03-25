@@ -1,5 +1,4 @@
 # coding=utf-8
-import json
 import logging
 import re
 import textwrap
@@ -66,7 +65,7 @@ class Snakes:
             # wikipedia does have a error page
             try:
                 PAGEID = j["query"]["search"][0]["pageid"]
-            except Keyerror:
+            except KeyError:
                 PAGEID = 41118
             PAGEIDS = f"pageids={PAGEID}"
 
@@ -81,7 +80,7 @@ class Snakes:
                 snake_info["images"] = j["query"]["pages"][f"{PAGEID}"]["images"]
                 snake_info["fullurl"] = j["query"]["pages"][f"{PAGEID}"]["fullurl"]
                 snake_info["pageid"] = j["query"]["pages"][f"{PAGEID}"]["pageid"]
-            except:
+            except KeyError:
                 snake_info["error"] = True
             if snake_info["images"]:
                 i_url = 'https://commons.wikimedia.org/wiki/Special:FilePath/'
