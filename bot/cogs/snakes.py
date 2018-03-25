@@ -1,5 +1,7 @@
 # coding=utf-8
+import aiohttp
 import asyncio
+import async_timeout
 import json
 import logging
 import random
@@ -22,6 +24,11 @@ class Snakes:
         # Not final data
         with open('data.json', 'r') as f:
             self.data = json.load(f)
+
+    async def fetch(self, session, url):
+        async with async_timeout.timeout(10):
+            async with session.get(url) as response:
+                return await response.text()
 
     async def disambiguate(self, ctx: Context, entries: List[str], timeout: int = 30):
         """
@@ -92,6 +99,43 @@ class Snakes:
         :param name: Optional, the name of the snake to get information for - omit for a random snake
         :return: A dict containing information on a snake
         """
+        snake_info = {}
+        # python (programming language) pageid = 23862
+        URL = "https://en.wikipedia.org/w/api.php?"
+        ACTION = "action=query"
+        LIST = "list=search"
+        SRSEARCH = "srsearch="
+        INPUT = "Naja mossambica"
+        UTF8 = "utf8="
+        SRLIMIT = "srlimit=1"
+        FORMAT = "format=json"
+        PROP = "prop=extracts|images|info"
+        EXLIMIT = "exlimit=max"
+        EXPLAINTEXT = "explaintext"
+        INPROP = "inprop=url"
+
+        PAGE_ID_URL = f"{URL}{FORMAT}&{ACTION}&{LIST}&{SRSEARCH}{name}&{UTF8}&{SRLIMIT}"
+
+        async with aiohttp.ClientSession() as session:
+            response = await self.fetch(session, PAGE_ID_URL)
+            j = json.loads(response)
+            # add exception handling
+            PAGEID = j["query"]["search"][0]["pageid"]
+            PAGEIDS = f"pageids={PAGEID}"
+
+        snake_page = f"{URL}{FORMAT}&{ACTION}&{PROP}&{EXLIMIT}&{EXPLAINTEXT}&{INPROP}&{PAGEIDS}"
+
+        async with aiohttp.ClientSession() as session:
+            response = await self.fetch(session, snake_page)
+            j = json.loads(response)
+            log.info(snake_page)
+            # constructing dict - handle exceptions later
+            snake_info["title"] = j["query"]["pages"][f"{PAGEID}"]["title"]
+            snake_info["extract"] = j["query"]["pages"][f"{PAGEID}"]["extract"][:1500]  # just for limiting max 2k limit on discord
+            snake_info["images"] = j["query"]["pages"][f"{PAGEID}"]["images"]
+            snake_info["fullurl"] = j["query"]["pages"][f"{PAGEID}"]["fullurl"]
+            snake_info["pageid"] = j["query"]["pages"][f"{PAGEID}"]["pageid"]
+        return snake_info
 
     @command()
     async def get(self, ctx: Context, name: str = None):
@@ -106,7 +150,9 @@ class Snakes:
         """
         items = self.get_potential_matches(name)
         result = await self.disambiguate(ctx, items)
-        await ctx.send(result)
+        log.info(type(result))
+        r = await self.get_snek(result)
+        await ctx.send(r)
 
     async def on_command_error(self, ctx, error):
         # Temporary
