@@ -20,6 +20,7 @@ You can off-course search directly for the scientific name.
 There is also a guessing game here
 
 **bot.snakes.guess()**
+
 ![guess_the_snake](https://i.imgur.com/JWHrDbk.png)
 
 Alas, if you are in a voice channel and type **bot.zen** you are greeted with a little easter-egg
