@@ -99,7 +99,9 @@ class Snakes:
                           'locator',
                           'Woma.png',
                           '-map.',
-                          '.svg'
+                          '.svg',
+                          'ange.',
+                          'Adder%20(PSF).png'
                           ]
                 for image in snake_info["images"]:
                     i = image["title"].split(':')[1].replace(" ", "%20")
