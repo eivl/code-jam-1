@@ -53,6 +53,14 @@ def in_channel(channel_id):
 
 
 def locked():
+    """
+    Allows the user to only run one instance of the decorated command at a time.
+
+    Subsequent calls to the command from the same author are
+    ignored until the command has completed invocation.
+
+    This decorator has to go before (below) the `command` decorator.
+    """
     def wrap(func):
         func.__locks = WeakValueDictionary()
 
