@@ -6,17 +6,19 @@ This is the repository for all code relating to our first code jam, in March 201
 
 ## What does it do?
 Searches Wikipedia for snake information, but first it **converts** your search to a valid snake result. You get a nice table when you invoke the search command.
-
 **bot.snakes.get("viper")**
+
 ![Multiple_search_results](https://i.imgur.com/9Lij5Jp.png)
 
 You can off-course search directly for the scientific name.
 **bot.snakes.get("Bothriechis schlegelii")
+
 ![Scientific_search](https://i.imgur.com/M7WdO18.png)
 
 **bot.snakes.get()** returns a random snake from wikipedia
 
 There is also a guessing game here
+
 **bot.snakes.guess()**
 ![guess_the_snake](https://i.imgur.com/JWHrDbk.png)
 
