@@ -2,6 +2,7 @@ import json
 import random
 
 from discord.ext.commands import Converter
+
 from fuzzywuzzy import fuzz
 
 from bot.utils import disambiguate
@@ -12,6 +13,9 @@ class Snake(Converter):
         snakes = json.load(f)
 
     async def convert(self, ctx, name):
+        if name.lower() == 'python':
+            return 'Python (programming language)'
+
         def get_potential(iterable, *, threshold=80):
             nonlocal name
 

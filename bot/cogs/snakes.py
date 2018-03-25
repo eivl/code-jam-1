@@ -4,7 +4,7 @@ import re
 from typing import Any, Dict
 
 import discord
-from discord.ext.commands import AutoShardedBot, Context, command, BadArgument
+from discord.ext.commands import AutoShardedBot, BadArgument, Context, command
 
 from bot.converters import Snake
 
