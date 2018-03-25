@@ -25,7 +25,6 @@ class Snake(Converter):
             for item in iterable:
                 original, item = item, item.lower()
 
-                print(name, item)
                 if name == item:
                     return [original]
 
