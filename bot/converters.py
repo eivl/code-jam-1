@@ -12,23 +12,33 @@ class Snake(Converter):
         snakes = json.load(f)
 
     async def convert(self, ctx, name):
-        if name.lower() == 'python':
+        print(name)
+        name = name.lower()
+
+        if name == 'python':
             return 'Python (programming language)'
 
         def get_potential(iterable, *, threshold=80):
             nonlocal name
+            potential = []
 
-            name = name.lower()
             for item in iterable:
-                a, b = fuzz.ratio(name, item.lower()), fuzz.partial_ratio(name, item.lower())
+                original, item = item, item.lower()
 
+                print(name, item)
+                if name == item:
+                    return [original]
+
+                a, b = fuzz.ratio(name, item), fuzz.partial_ratio(name, item)
                 if a >= threshold or b >= threshold:
-                    yield item
+                    potential.append(original)
+
+            return potential
 
         all_names = self.snakes.keys() | self.snakes.values()
         timeout = len(all_names) * (3 / 4)
 
-        name = await disambiguate(ctx, list(get_potential(all_names)), timeout=timeout, colour=0x59982F)
+        name = await disambiguate(ctx, get_potential(all_names), timeout=timeout, colour=0x59982F)
         return self.snakes.get(name, name)
 
     @classmethod

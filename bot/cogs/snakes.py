@@ -8,7 +8,7 @@ from typing import Any, Dict
 import aiohttp
 import async_timeout
 import discord
-from discord.ext.commands import AutoShardedBot, BadArgument, Context, command
+from discord.ext.commands import AutoShardedBot, Context, command
 
 from bot.converters import Snake
 
@@ -21,7 +21,8 @@ class Snakes:
     """
 
     # I really hope this works
-    wiki_re = re.compile(r'== (.*?) ==(.*?\n\n)', flags=re.DOTALL)
+    wiki_sects = re.compile(r'(?:=+ (.*?) =+)(.*?\n\n)', flags=re.DOTALL)
+    wiki_brief = re.compile(r'(.*?)(=+ (.*?) =+)', flags=re.DOTALL)
 
     def __init__(self, bot: AutoShardedBot):
         self.bot = bot
@@ -101,7 +102,7 @@ class Snakes:
         return snake_info
 
     @command()
-    async def get(self, ctx: Context, name: Snake = None):
+    async def get(self, ctx: Context, *, name: Snake = None):
         """
         Go online and fetch information about a snake
 
@@ -115,15 +116,25 @@ class Snakes:
             name = Snake.random()
 
         data = await self.get_snek(name)
-        embed = discord.Embed(title=data['title'], url=data['fullurl'], colour=0x59982F)
 
-        fields = self.wiki_re.findall(data['extract'])
+        match = self.wiki_brief.match(data['extract'])
+        embed = discord.Embed(
+            title=data['title'],
+            description=match.group(1) if match else None,
+            url=data['fullurl'],
+            colour=0x59982F
+        )
+
+        fields = self.wiki_sects.findall(data['extract'])
+        excluded = ('see also',)
 
         for title, body in fields:
+            if title.lower() in excluded:
+                continue
             if not body.strip():
                 continue
-            value = textwrap.shorten(body.strip(), width=500)
-            embed.add_field(name=title, value= value + '\n\u200b', inline=False)
+            value = textwrap.shorten(body.strip(), width=200)
+            embed.add_field(name=title, value=value + '\n\u200b', inline=False)
 
         embed.set_footer(text='Powered by Wikipedia')
 
@@ -132,9 +143,6 @@ class Snakes:
 
     async def on_command_error(self, ctx, error):
         # Temporary
-        # if not isinstance(error, BadArgument):
-        #     return
-
         await ctx.send(str(error))
 
     # Any additional commands can be placed here. Be creative, but keep it to a reasonable amount!
