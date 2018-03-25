@@ -30,7 +30,7 @@ class Snakes:
     async def fetch(self, session, url):
         async with async_timeout.timeout(10):
             async with session.get(url) as response:
-                return await response.text()
+                return await response.json()
 
     async def get_snek(self, name: str = None) -> Dict[str, Any]:
         """
@@ -62,8 +62,7 @@ class Snakes:
         PAGE_ID_URL = f"{URL}{FORMAT}&{ACTION}&{LIST}&{SRSEARCH}{name}&{UTF8}&{SRLIMIT}"
 
         async with aiohttp.ClientSession() as session:
-            response = await self.fetch(session, PAGE_ID_URL)
-            j = json.loads(response)
+            j = await self.fetch(session, PAGE_ID_URL)
             # wikipedia does have a error page
             try:
                 PAGEID = j["query"]["search"][0]["pageid"]
@@ -74,8 +73,7 @@ class Snakes:
         snake_page = f"{URL}{FORMAT}&{ACTION}&{PROP}&{EXLIMIT}&{EXPLAINTEXT}&{INPROP}&{PAGEIDS}"
 
         async with aiohttp.ClientSession() as session:
-            response = await self.fetch(session, snake_page)
-            j = json.loads(response)
+            j = await self.fetch(session, snake_page)
             # constructing dict - handle exceptions later
             try:
                 snake_info["title"] = j["query"]["pages"][f"{PAGEID}"]["title"]
