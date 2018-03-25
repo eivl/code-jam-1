@@ -70,9 +70,8 @@ class Snakes:
                 PAGEID = 41118
             PAGEIDS = f"pageids={PAGEID}"
 
-        snake_page = f"{URL}{FORMAT}&{ACTION}&{PROP}&{EXLIMIT}&{EXPLAINTEXT}&{INPROP}&{PAGEIDS}"
+            snake_page = f"{URL}{FORMAT}&{ACTION}&{PROP}&{EXLIMIT}&{EXPLAINTEXT}&{INPROP}&{PAGEIDS}"
 
-        async with aiohttp.ClientSession() as session:
             j = await self.fetch(session, snake_page)
             # constructing dict - handle exceptions later
             try:
