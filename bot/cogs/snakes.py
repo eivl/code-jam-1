@@ -16,6 +16,7 @@ from bot.decorators import locked
 from bot.utils import disambiguate
 
 log = logging.getLogger(__name__)
+URL = "https://en.wikipedia.org/w/api.php?"
 
 
 class Snakes:
@@ -32,9 +33,12 @@ class Snakes:
     def __init__(self, bot: AutoShardedBot):
         self.bot = bot
 
-    async def fetch(self, session, url):
+    async def fetch(self, session, url, params=None):
+        if params is None:
+            params = {}
+
         async with async_timeout.timeout(10):
-            async with session.get(url) as response:
+            async with session.get(url, params=params) as response:
                 return await response.json()
 
     async def get_snek(self, name: str) -> Dict[str, Any]:
@@ -51,40 +55,45 @@ class Snakes:
         :return: A dict containing information on a snake
         """
         snake_info = {}
-        # python (programming language) pageid = 23862
-        URL = "https://en.wikipedia.org/w/api.php?"
-        ACTION = "action=query"
-        LIST = "list=search"
-        SRSEARCH = "srsearch="
-        UTF8 = "utf8="
-        SRLIMIT = "srlimit=1"
-        FORMAT = "format=json"
-        PROP = "prop=extracts|images|info"
-        EXLIMIT = "exlimit=max"
-        EXPLAINTEXT = "explaintext"
-        INPROP = "inprop=url"
-
-        PAGE_ID_URL = f"{URL}{FORMAT}&{ACTION}&{LIST}&{SRSEARCH}{name}&{UTF8}&{SRLIMIT}"
 
         async with aiohttp.ClientSession() as session:
-            j = await self.fetch(session, PAGE_ID_URL)
+            params = {
+                'format': 'json',
+                'action': 'query',
+                'list': 'search',
+                'srsearch': name,
+                'utf8': '',
+                'srlimit': '1',
+            }
+
+            json = await self.fetch(session, URL, params=params)
+
             # wikipedia does have a error page
             try:
-                PAGEID = j["query"]["search"][0]["pageid"]
+                pageid = json["query"]["search"][0]["pageid"]
             except KeyError:
-                PAGEID = 41118
-            PAGEIDS = f"pageids={PAGEID}"
+                # Wikipedia error page ID(?)
+                pageid = 41118
 
-            snake_page = f"{URL}{FORMAT}&{ACTION}&{PROP}&{EXLIMIT}&{EXPLAINTEXT}&{INPROP}&{PAGEIDS}"
+            params = {
+                'format': 'json',
+                'action': 'query',
+                'prop': 'extracts|images|info',
+                'exlimit': 'max',
+                'explaintext': '',
+                'inprop': 'url',
+                'pageids': pageid
+            }
 
-            j = await self.fetch(session, snake_page)
+            json = await self.fetch(session, URL, params=params)
+
             # constructing dict - handle exceptions later
             try:
-                snake_info["title"] = j["query"]["pages"][f"{PAGEID}"]["title"]
-                snake_info["extract"] = j["query"]["pages"][f"{PAGEID}"]["extract"]
-                snake_info["images"] = j["query"]["pages"][f"{PAGEID}"]["images"]
-                snake_info["fullurl"] = j["query"]["pages"][f"{PAGEID}"]["fullurl"]
-                snake_info["pageid"] = j["query"]["pages"][f"{PAGEID}"]["pageid"]
+                snake_info["title"] = json["query"]["pages"][f"{pageid}"]["title"]
+                snake_info["extract"] = json["query"]["pages"][f"{pageid}"]["extract"]
+                snake_info["images"] = json["query"]["pages"][f"{pageid}"]["images"]
+                snake_info["fullurl"] = json["query"]["pages"][f"{pageid}"]["fullurl"]
+                snake_info["pageid"] = json["query"]["pages"][f"{pageid}"]["pageid"]
             except KeyError:
                 snake_info["error"] = True
             if snake_info["images"]:
@@ -92,33 +101,36 @@ class Snakes:
                 image_list = []
                 map_list = []
                 thumb_list = []
-                banned = ['Commons-logo.svg',
-                          'Red%20Pencil%20Icon.png',
-                          'distribution',
-                          'The%20Death%20of%20Cleopatra%20arthur.jpg',
-                          'Head%20of%20holotype',
-                          'locator',
-                          'Woma.png',
-                          '-map.',
-                          '.svg',
-                          'ange.',
-                          'Adder%20(PSF).png'
-                          ]
+
+                # Wikipedia has arbitrary images that are not snakes
+                banned = [
+                    'Commons-logo.svg',
+                    'Red%20Pencil%20Icon.png',
+                    'distribution',
+                    'The%20Death%20of%20Cleopatra%20arthur.jpg',
+                    'Head%20of%20holotype',
+                    'locator',
+                    'Woma.png',
+                    '-map.',
+                    '.svg',
+                    'ange.',
+                    'Adder%20(PSF).png'
+                ]
+
                 for image in snake_info["images"]:
-                    i = image["title"].split(':')[1].replace(" ", "%20")
-                    if not i.startswith('Map'):
-                        for b in banned:
-                            image_banned = False
-                            if b in i:
-                                image_banned = True
-                                break
-                        if image_banned:
+                    # images come in the format of `File:filename.extension`
+                    file, sep, filename = image["title"].partition(':')
+                    filename = filename.replace(" ", "%20")  # Wikipedia returns good data!
+
+                    if not filename.startswith('Map'):
+                        if any(ban in filename for ban in banned):
                             log.info("the image is banned")
                         else:
-                            image_list.append(f"{i_url}{i}")
-                            thumb_list.append(f"{i_url}{i}?width=100")
+                            image_list.append(f"{i_url}{filename}")
+                            thumb_list.append(f"{i_url}{filename}?width=100")
                     else:
-                        map_list.append(f"{i_url}{i}")
+                        map_list.append(f"{i_url}{filename}")
+
             snake_info["image_list"] = image_list
             snake_info["map_list"] = map_list
             snake_info["thumb_list"] = thumb_list
