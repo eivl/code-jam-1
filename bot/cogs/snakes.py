@@ -1,4 +1,5 @@
 # coding=utf-8
+import asyncio
 import logging
 import re
 import textwrap
@@ -105,10 +106,7 @@ class Snakes:
     @bot_has_permissions(manage_messages=True)
     async def get(self, ctx: Context, name: Snake = None):
         """
-        Go online and fetch information about a snake
-
-        This should make use of your `get_snek` method, using it to get information about a snake. This information
-        should be sent back to Discord in an embed.
+        Fetches information about a snake from Wikipedia.
 
         :param ctx: Context object passed from discord.py
         :param name: Optional, the name of the snake to get information for - omit for a random snake
@@ -149,11 +147,32 @@ class Snakes:
 
         await ctx.send(embed=embed)
 
+    @command(hidden=True)
+    async def zen(self, ctx):
+        """
+        >>> import this
+
+        Long time Pythoneer Tim Peters succinctly channels the BDFL's guiding principles
+        for Python's design into 20 aphorisms, only 19 of which have been written down.
+        """
+        channel = ctx.author.voice.channel
+        if channel is None:
+            return
+
+        state = ctx.guild.voice_client
+        if state is not None:
+            # Already playing
+            return
+
+        voice = await channel.connect()
+        source = discord.FFmpegPCMAudio('zen.mp3')
+        voice.play(source, after=lambda *args: asyncio.run_coroutine_threadsafe(
+            voice.disconnect(), loop=ctx.bot.loop
+        ))
+
     async def on_command_error(self, ctx, error):
         # Temporary
         await ctx.send(str(error))
-
-    # Any additional commands can be placed here. Be creative, but keep it to a reasonable amount!
 
 
 def setup(bot):
