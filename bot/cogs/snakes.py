@@ -100,7 +100,7 @@ class Snakes:
         return snake_info
 
     @command()
-    async def get(self, ctx: Context, *, name: Snake = None):
+    async def get(self, ctx: Context, name: Snake = None):
         """
         Go online and fetch information about a snake
 
