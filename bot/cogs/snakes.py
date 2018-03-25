@@ -103,19 +103,18 @@ class Snakes:
         data = await self.get_snek(name)
         embed = discord.Embed(title=data['title'], url=data['fullurl'], colour=0x59982F)
 
-        print(data['extract'])
         fields = self.wiki_re.findall(data['extract'])
-        print(fields)
 
-        # TODO embeds can probably get way too big, only show one to three sentences from each section?
         for title, body in fields:
+            if not body.strip():
+                continue
             value = textwrap.shorten(body.strip(), width=500)
             embed.add_field(name=title, value= value + '\n\u200b', inline=False)
 
         embed.set_footer(text='Powered by Wikipedia')
 
         # TODO thumbnail in embed
-        await ctx.send(name, embed=embed)
+        await ctx.send(embed=embed)
 
     async def on_command_error(self, ctx, error):
         # Temporary

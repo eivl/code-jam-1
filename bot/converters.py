@@ -2,7 +2,6 @@ import json
 import random
 
 from discord.ext.commands import Converter
-
 from fuzzywuzzy import fuzz
 
 from bot.utils import disambiguate
