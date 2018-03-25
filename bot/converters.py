@@ -1,6 +1,7 @@
 import json
 import random
 
+import discord
 from discord.ext.commands import Converter
 from fuzzywuzzy import fuzz
 
@@ -36,7 +37,10 @@ class Snake(Converter):
         all_names = self.snakes.keys() | self.snakes.values()
         timeout = len(all_names) * (3 / 4)
 
-        name = await disambiguate(ctx, get_potential(all_names), timeout=timeout, colour=0x59982F)
+        embed = discord.Embed(title='Found multiple choices. Please choose the correct one.', colour=0x59982F)
+        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+
+        name = await disambiguate(ctx, get_potential(all_names), timeout=timeout, embed=embed)
         return self.snakes.get(name, name)
 
     @classmethod

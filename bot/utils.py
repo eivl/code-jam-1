@@ -9,8 +9,7 @@ from bot.pagination import LinePaginator
 
 
 async def disambiguate(ctx: Context, entries: List[str],
-                       *, timeout: float = 30, per_page: int = 20, empty: bool = False,
-                       colour: Union[discord.Colour, int] = 0x000000):
+                       *, timeout: float = 30, per_page: int = 20, empty: bool = False, embed: discord.Embed = None):
     """
     Has the user choose between multiple entries in case one could not be chosen automatically.
 
@@ -19,7 +18,7 @@ async def disambiguate(ctx: Context, entries: List[str],
     :param timeout: Number of seconds to wait before canceling disambiguation
     :param per_page: Entries per embed page
     :param empty: Whether the paginator should have an extra line between items
-    :param colour: The colour for the embed
+    :param embed: The embed that the paginator will use.
     :return: Users choice for correct entry.
     """
     if len(entries) == 0:
@@ -36,12 +35,12 @@ async def disambiguate(ctx: Context, entries: List[str],
                 message.channel == ctx.channel)
 
     try:
-        embed = discord.Embed(title='Found multiple choices. Please choose the correct one.', colour=colour)
-        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+        if embed is None:
+            embed = discord.Embed()
 
         coro1 = ctx.bot.wait_for('message', check=check, timeout=timeout)
         coro2 = LinePaginator.paginate(choices, ctx, embed=embed, max_lines=per_page,
-                                       empty=empty, max_size=1500, timeout=9000)
+                                       empty=empty, max_size=6000, timeout=9000)
 
         # wait_for timeout will go to except instead of the wait_for thing as I expected
         futures = [asyncio.ensure_future(coro1), asyncio.ensure_future(coro2)]

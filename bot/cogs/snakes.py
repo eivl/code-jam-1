@@ -1,6 +1,7 @@
 # coding=utf-8
 import asyncio
 import logging
+import random
 import re
 import textwrap
 from typing import Any, Dict
@@ -11,6 +12,7 @@ import discord
 from discord.ext.commands import AutoShardedBot, Context, command, bot_has_permissions
 
 from bot.converters import Snake
+from bot.utils import disambiguate
 
 log = logging.getLogger(__name__)
 
@@ -24,6 +26,8 @@ class Snakes:
     wiki_sects = re.compile(r'(?:=+ (.*?) =+)(.*?\n\n)', flags=re.DOTALL)
     wiki_brief = re.compile(r'(.*?)(=+ (.*?) =+)', flags=re.DOTALL)
 
+    valid = ('gif', 'png', 'jpeg', 'jpg', 'webp')
+
     def __init__(self, bot: AutoShardedBot):
         self.bot = bot
 
@@ -32,7 +36,7 @@ class Snakes:
             async with session.get(url) as response:
                 return await response.json()
 
-    async def get_snek(self, name: str = None) -> Dict[str, Any]:
+    async def get_snek(self, name: str) -> Dict[str, Any]:
         """
         Go online and fetch information about a snake
 
@@ -42,7 +46,7 @@ class Snakes:
         If "python" is given as the snake name, you should return information about the programming language, but with
         all the information you'd provide for a real snake. Try to have some fun with this!
 
-        :param name: Optional, the name of the snake to get information for - omit for a random snake
+        :param name: The name of the snake to get information for - omit for a random snake
         :return: A dict containing information on a snake
         """
         snake_info = {}
@@ -142,9 +146,8 @@ class Snakes:
 
         embed.set_footer(text='Powered by Wikipedia')
 
-        valid = ('gif', 'png', 'jpeg', 'jpg', 'webp')
         emoji = 'https://emojipedia-us.s3.amazonaws.com/thumbs/60/google/3/snake_1f40d.png'
-        image = next((url for url in data['image_list'] if url.endswith(valid)), emoji)
+        image = next((url for url in data['image_list'] if url.endswith(self.valid)), emoji)
         embed.set_thumbnail(url=image)
 
         await ctx.send(embed=embed)
@@ -174,9 +177,29 @@ class Snakes:
             voice.disconnect(), loop=ctx.bot.loop
         ))
 
-    async def on_command_error(self, ctx, error):
-        # Temporary
-        await ctx.send(str(error))
+    @command(aliases=['identify'])
+    async def guess(self, ctx):
+        image = None
+
+        while image is None:
+            snakes = [Snake.random() for _ in range(5)]
+            answer = random.choice(snakes)
+
+            data = await self.get_snek(answer)
+
+            image = next((url for url in data['image_list'] if url.endswith(self.valid)), None)
+
+        embed = discord.Embed(
+            title='Which of the following is the snake in the image?',
+            colour=random.randint(1, 0xFFFFFF)
+        )
+        embed.set_image(url=image)
+
+        guess = await disambiguate(ctx, snakes, timeout=60, embed=embed)
+
+        if guess == answer:
+            return await ctx.send('You guessed correctly!')
+        await ctx.send(f'You guessed wrong. The correct answer was {answer}.')
 
 
 def setup(bot):
