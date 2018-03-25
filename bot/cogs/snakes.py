@@ -1,14 +1,16 @@
 # coding=utf-8
-import aiohttp
-import asyncio
-import async_timeout
 import json
 import logging
-import random
-from typing import Any, Dict, List
+import re
+import textwrap
+from typing import Any, Dict
 
-from fuzzywuzzy import fuzz
-from discord.ext.commands import AutoShardedBot, Context, command, BadArgument
+import aiohttp
+import async_timeout
+import discord
+from discord.ext.commands import AutoShardedBot, BadArgument, Context, command
+
+from bot.converters import Snake
 
 log = logging.getLogger(__name__)
 
@@ -18,73 +20,16 @@ class Snakes:
     Snake-related commands
     """
 
+    # I really hope this works
+    wiki_re = re.compile(r'== (.*?) ==(.*?\n\n)', flags=re.DOTALL)
+
     def __init__(self, bot: AutoShardedBot):
         self.bot = bot
-
-        # Not final data
-        with open('data.json', 'r') as f:
-            self.data = json.load(f)
 
     async def fetch(self, session, url):
         async with async_timeout.timeout(10):
             async with session.get(url) as response:
                 return await response.text()
-
-    async def disambiguate(self, ctx: Context, entries: List[str], timeout: int = 30):
-        """
-        Has the user choose between multiple entries in case one could not be chosen automatically.
-
-        :param ctx: Context object from discord.py
-        :param entries: List of items for user to choose from
-        :param timeout: Number of seconds to wait before canceling disambiguation
-        :return: Users choice for correct entry.
-        """
-        # allow names too and not only numbers?
-        if len(entries) == 0:
-            raise BadArgument('No matches found.')
-
-        if len(entries) == 1:
-            return entries[0]
-
-        choices = '\n'.join('{0}: {1}'.format(index, entry) for index, entry in enumerate(entries, start=1))
-        await ctx.send('Found multiple entries. Please choose the correct one.\n```' + choices + '```')
-
-        def check(message):
-            return (message.content.isdigit() and
-                    message.author == ctx.author and
-                    message.channel == ctx.channel)
-
-        try:
-            message = await self.bot.wait_for('message', check=check, timeout=timeout)
-        except asyncio.TimeoutError:
-            raise BadArgument('Timed out.')
-
-        # Guaranteed to not error because of isdigit() in check
-        index = int(message.content)
-
-        try:
-            return entries[index - 1]
-        except IndexError:
-            raise BadArgument('Invalid choice.')
-
-    def get_potential_matches(self, name):
-        # TODO
-        # - make this a converter instead
-        # - nested disambiguation?
-        # - convert to scientific name in converter for an easier time
-        # - custom Context object hoo boy
-
-        if name is None:
-            # Need list cast because choice() uses indexing internally
-            return [random.choice(list(self.data.values()))]
-
-        def predicate(item):
-            nonlocal name
-            item, name = item.lower(), name.lower()
-            return fuzz.partial_ratio(item, name) > 80 or fuzz.ratio(item, name) > 80
-
-        # Maybe they should be separate
-        return [item for item in self.data.keys() | self.data.values() if predicate(item)]
 
     async def get_snek(self, name: str = None) -> Dict[str, Any]:
         """
@@ -105,7 +50,6 @@ class Snakes:
         ACTION = "action=query"
         LIST = "list=search"
         SRSEARCH = "srsearch="
-        INPUT = "Naja mossambica"
         UTF8 = "utf8="
         SRLIMIT = "srlimit=1"
         FORMAT = "format=json"
@@ -131,14 +75,14 @@ class Snakes:
             log.info(snake_page)
             # constructing dict - handle exceptions later
             snake_info["title"] = j["query"]["pages"][f"{PAGEID}"]["title"]
-            snake_info["extract"] = j["query"]["pages"][f"{PAGEID}"]["extract"][:1500]  # just for limiting max 2k limit on discord
+            snake_info["extract"] = j["query"]["pages"][f"{PAGEID}"]["extract"]
             snake_info["images"] = j["query"]["pages"][f"{PAGEID}"]["images"]
             snake_info["fullurl"] = j["query"]["pages"][f"{PAGEID}"]["fullurl"]
             snake_info["pageid"] = j["query"]["pages"][f"{PAGEID}"]["pageid"]
         return snake_info
 
     @command()
-    async def get(self, ctx: Context, name: str = None):
+    async def get(self, ctx: Context, name: Snake = None):
         """
         Go online and fetch information about a snake
 
@@ -148,11 +92,25 @@ class Snakes:
         :param ctx: Context object passed from discord.py
         :param name: Optional, the name of the snake to get information for - omit for a random snake
         """
-        items = self.get_potential_matches(name)
-        result = await self.disambiguate(ctx, items)
-        log.info(type(result))
-        r = await self.get_snek(result)
-        await ctx.send(r)
+        if name is None:
+            name = Snake.random()
+
+        data = await self.get_snek(name)
+        embed = discord.Embed(title=data['title'], url=data['fullurl'], colour=0x59982F)
+
+        print(data['extract'])
+        fields = self.wiki_re.findall(data['extract'])
+        print(fields)
+
+        # TODO embeds can probably get way too big, only show one to three sentences from each section?
+        for title, body in fields:
+            value = textwrap.shorten(body.strip(), width=500)
+            embed.add_field(name=title, value= value + '\n\u200b', inline=False)
+
+        embed.set_footer(text='Powered by Wikipedia')
+
+        # TODO thumbnail in embed
+        await ctx.send(name, embed=embed)
 
     async def on_command_error(self, ctx, error):
         # Temporary
