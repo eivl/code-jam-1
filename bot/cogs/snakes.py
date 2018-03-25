@@ -116,6 +116,9 @@ class Snakes:
 
         data = await self.get_snek(name)
 
+        if data.get('error'):
+            return await ctx.send('Could not fetch data from Wikipedia.')
+
         match = self.wiki_brief.match(data['extract'])
         embed = discord.Embed(
             title=data['title'],
