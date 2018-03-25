@@ -1,7 +1,6 @@
 # coding=utf-8
 import asyncio
-from typing import List  # removed Union due to flake8 error
-
+from typing import List
 import discord
 from discord.ext.commands import BadArgument, Context
 
