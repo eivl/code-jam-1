@@ -1,12 +1,11 @@
 # coding=utf-8
 import logging
-
 from asyncio import Lock
-from discord.ext import commands
-from discord.ext.commands import Context
+from functools import wraps
 from weakref import WeakValueDictionary
 
-from functools import wraps
+from discord.ext import commands
+from discord.ext.commands import Context
 
 log = logging.getLogger(__name__)
 
