@@ -91,18 +91,35 @@ class Snakes:
                 image_list = []
                 map_list = []
                 thumb_list = []
+                banned = ['Commons-logo.svg',
+                          'Red%20Pencil%20Icon.png',
+                          'distribution',
+                          'The%20Death%20of%20Cleopatra%20arthur.jpg',
+                          'Head%20of%20holotype',
+                          'locator',
+                          'Woma.png',
+                          '-map.',
+                          '.svg'
+                          ]
                 for image in snake_info["images"]:
                     i = image["title"].split(':')[1].replace(" ", "%20")
                     if not i.startswith('Map'):
-                        image_list.append(f"{i_url}{i}")
-                        thumb_list.append(f"{i_url}{i}?width=100")
+                        for b in banned:
+                            image_banned = False
+                            if b in i:
+                                image_banned = True
+                                break
+                        if image_banned:
+                            log.info("the image is banned")
+                        else:
+                            log.info("the image is clean: ", i)
+                            image_list.append(f"{i_url}{i}")
+                            thumb_list.append(f"{i_url}{i}?width=100")
                     else:
                         map_list.append(f"{i_url}{i}")
             snake_info["image_list"] = image_list
             snake_info["map_list"] = map_list
             snake_info["thumb_list"] = thumb_list
-            log.info(image_list)
-            log.info(map_list)
         return snake_info
 
     @command()
