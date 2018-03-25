@@ -124,7 +124,7 @@ class Snakes:
             snake_info["thumb_list"] = thumb_list
         return snake_info
 
-    @command()
+    @command(name="snakes.get()", aliases=["snakes.get"])
     @bot_has_permissions(manage_messages=True)
     async def get(self, ctx: Context, name: Snake = None):
         """
@@ -196,7 +196,7 @@ class Snakes:
             voice.disconnect(), loop=ctx.bot.loop
         ))
 
-    @command(aliases=['identify'])
+    @command(name="snakes.guess()", aliases=["snakes.guess", "identify"])
     async def guess(self, ctx):
         """
         Snake identifying game!
