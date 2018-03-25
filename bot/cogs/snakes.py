@@ -179,6 +179,9 @@ class Snakes:
 
     @command(aliases=['identify'])
     async def guess(self, ctx):
+        """
+        Snake identifying game!
+        """
         image = None
 
         while image is None:
