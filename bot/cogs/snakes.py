@@ -26,9 +26,9 @@ class Snakes:
     def __init__(self, bot: AutoShardedBot):
         self.bot = bot
 
-    async def fetch(self, url):
+    async def fetch(self, session, url):
         async with async_timeout.timeout(10):
-            async with bot.http_session(url) as response:
+            async with session.get(url) as response:
                 return await response.text()
 
     async def get_snek(self, name: str = None) -> Dict[str, Any]:
@@ -60,8 +60,8 @@ class Snakes:
 
         PAGE_ID_URL = f"{URL}{FORMAT}&{ACTION}&{LIST}&{SRSEARCH}{name}&{UTF8}&{SRLIMIT}"
 
-        async with bot.http_session as session:
-            response = await self.fetch(PAGE_ID_URL)
+        async with aiohttp.ClientSession() as session:
+            response = await self.fetch(session, PAGE_ID_URL)
             j = json.loads(response)
             # wikipedia does have a error page
             try:
@@ -72,8 +72,8 @@ class Snakes:
 
         snake_page = f"{URL}{FORMAT}&{ACTION}&{PROP}&{EXLIMIT}&{EXPLAINTEXT}&{INPROP}&{PAGEIDS}"
 
-        async with bot.http_session as session:
-            response = await self.fetch(snake_page)
+        async with aiohttp.ClientSession() as session:
+            response = await self.fetch(session, snake_page)
             j = json.loads(response)
             # constructing dict - handle exceptions later
             try:
@@ -84,6 +84,20 @@ class Snakes:
                 snake_info["pageid"] = j["query"]["pages"][f"{PAGEID}"]["pageid"]
             except:
                 snake_info["error"] = True
+            if snake_info["images"]:
+                i_url = 'https://commons.wikimedia.org/wiki/Special:FilePath/'
+                image_list = []
+                map_list = []
+                for image in snake_info["images"]:
+                    i = image["title"].split(':')[1]
+                    if 'Map' not in i:
+                        image_list.append(f"{i_url}{i}")
+                    else:
+                        map_list.append(f"{i_url}{i}")
+            snake_info["image_list"] = image_list
+            snake_info["map_list"] = map_list
+            log.info(image_list)
+            log.info(map_list)
         return snake_info
 
     @command()
@@ -118,8 +132,8 @@ class Snakes:
 
     async def on_command_error(self, ctx, error):
         # Temporary
-        if not isinstance(error, BadArgument):
-            return
+        # if not isinstance(error, BadArgument):
+        #     return
 
         await ctx.send(str(error))
 
