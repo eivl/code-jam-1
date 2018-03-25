@@ -63,8 +63,11 @@ class Snakes:
         async with aiohttp.ClientSession() as session:
             response = await self.fetch(session, PAGE_ID_URL)
             j = json.loads(response)
-            # add exception handling
-            PAGEID = j["query"]["search"][0]["pageid"]
+            # wikipedia does have a error page
+            try:
+                PAGEID = j["query"]["search"][0]["pageid"]
+            except Keyerror:
+                PAGEID = 41118
             PAGEIDS = f"pageids={PAGEID}"
 
         snake_page = f"{URL}{FORMAT}&{ACTION}&{PROP}&{EXLIMIT}&{EXPLAINTEXT}&{INPROP}&{PAGEIDS}"
@@ -72,13 +75,15 @@ class Snakes:
         async with aiohttp.ClientSession() as session:
             response = await self.fetch(session, snake_page)
             j = json.loads(response)
-            log.info(snake_page)
             # constructing dict - handle exceptions later
-            snake_info["title"] = j["query"]["pages"][f"{PAGEID}"]["title"]
-            snake_info["extract"] = j["query"]["pages"][f"{PAGEID}"]["extract"]
-            snake_info["images"] = j["query"]["pages"][f"{PAGEID}"]["images"]
-            snake_info["fullurl"] = j["query"]["pages"][f"{PAGEID}"]["fullurl"]
-            snake_info["pageid"] = j["query"]["pages"][f"{PAGEID}"]["pageid"]
+            try:
+                snake_info["title"] = j["query"]["pages"][f"{PAGEID}"]["title"]
+                snake_info["extract"] = j["query"]["pages"][f"{PAGEID}"]["extract"]
+                snake_info["images"] = j["query"]["pages"][f"{PAGEID}"]["images"]
+                snake_info["fullurl"] = j["query"]["pages"][f"{PAGEID}"]["fullurl"]
+                snake_info["pageid"] = j["query"]["pages"][f"{PAGEID}"]["pageid"]
+            except:
+                snake_info["error"] = True
         return snake_info
 
     @command()
