@@ -156,6 +156,8 @@ class Snakes:
 
         Long time Pythoneer Tim Peters succinctly channels the BDFL's guiding principles
         for Python's design into 20 aphorisms, only 19 of which have been written down.
+
+        You must be connected to a voice channel in order to use this command.
         """
         channel = ctx.author.voice.channel
         if channel is None:
